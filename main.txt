@@ -1,0 +1,103 @@
+import pygame
+pygame.init()
+taille = [300, 300]
+screen = pygame.display.set_mode(taille)
+pygame.display.set_caption("hahaha")
+fini = False
+largeur = 25
+hauteur = 25
+marge = 1
+clock = pygame.time.Clock()
+
+
+
+noir = (0, 0, 0)
+blanc = (255, 255, 255)
+
+
+class Cell:
+	state = False
+	nextState = False #La nextState est là pour ne pas fausser les calculs de chaque cellule
+
+gridSize = 10
+
+#Calcule de l'état de chaque cellule
+cells = {}
+
+for x in range(gridSize):
+	for y in range(gridSize):
+		cells[x,y] = Cell()
+
+#Calcule de l'état de chaque cellule
+def calculateCellsState():
+	for x in range(gridSize):
+		for y in range(gridSize):
+			#Calcul de l'état d'une cellule
+			nearbyLivingCells = 0
+			#On check d'abord le nombre de cellules vivantes autour de la cellule calculée
+			for a in range(x - 1, x + 2):
+				for b in range(y - 1, y + 2):
+					if a >= 0 and b >= 0 and a <= gridSize - 1 and b <= gridSize - 1: #On exclue les cellules hors de la grille
+						if cells[a,b].state == True:
+							nearbyLivingCells += 1
+			if cells[x,y].state == True:
+				nearbyLivingCells -= 1
+			#Enfin on regarde le nb de cellules vivantes autour de la cellule calculée afin de déterminer son futur état
+			if cells[x,y].state == False and nearbyLivingCells == 3:
+				cells[x,y].nextState = True
+			if cells[x,y].state == True and nearbyLivingCells > 3:
+				cells[x,y].nextState = False
+			if nearbyLivingCells == 2:
+				cells[x,y].nextState = cells[x,y].state
+			if nearbyLivingCells == 1:
+				cells[x,y].nextState = False
+
+	#On actualise toute les cellules en même temps à l'aide de l'attribut nextState afin d'éviter les problémes de calcul
+	for x in range(gridSize):
+		for y in range(gridSize):
+			cells[x,y].state = cells[x,y].nextState
+
+#haha c moi
+
+#dessine la grille
+
+for li in range(gridSize):
+	for col in range(gridSize):
+		pygame.draw.rect(screen, blanc,[(marge + largeur) * col + marge,(marge + hauteur) * li + marge,largeur,hauteur])
+
+cells[2,2].state = True
+cells[2,3].state = True
+cells[2,4].state = True
+
+while not fini:
+	calculateCellsState()
+	
+	for event in pygame.event.get():  
+		#fermage de la fenetre
+		if event.type == pygame.QUIT:
+			fini = True
+			
+		#Change l'état d'une case quand tu cliques		
+		elif event.type == pygame.MOUSEBUTTONDOWN:
+			pos = pygame.mouse.get_pos() #prends co de la souris
+			col = int(pos[0] / (largeur + marge)) # convertit en co grille
+			li = int(pos[1] / (hauteur + marge))  # pareil haha
+			if col <= gridSize - 1 and li <= gridSize - 1:	
+				if cells[col,li].state == False:
+					cells[col,li].state = True
+				else:
+					cells[col,li].state = False
+
+
+	#actualise la grille 
+	for x in range(gridSize):
+		for y in range(gridSize):
+			if cells[x,y].state == True:
+				pygame.draw.rect(screen, noir,[(marge + largeur) * x + marge,(marge + hauteur) * y + marge,largeur,hauteur])
+			else:
+				pygame.draw.rect(screen, blanc,[(marge + largeur) * x + marge,(marge + hauteur) * y + marge,largeur,hauteur])
+				
+	clock.tick(1)
+	pygame.display.flip()
+	
+pygame.quit()
